@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import CarImage from "@/assets/images/car.png";
 import SearchBar from "@/components/SearchBar";
 import { Text, View } from "@/components/Themed";
@@ -15,7 +15,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Checkbox } from "expo-checkbox";
 import { Link, useNavigation } from "expo-router";
 import {
-  Button,
   Dimensions,
   Image,
   KeyboardAvoidingView,
@@ -27,20 +26,33 @@ import {
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 import { getUserCars } from "../api/car";
-// import DateTimePicker from "@react-native-community/datetimepicker";
-import DatePicker from 'react-native-date-picker'
+import DatePicker from "react-native-date-picker";
+
+type CarOption = {
+  label: string;
+  value: string | undefined;
+};
+
 export default function RideScreen() {
   const navigation = useNavigation();
   const [isAnalyzeChecked, setAnalyzeChecked] = useState(false);
   const [isMeetingPointChecked, setMeetingPointChecked] = useState(false);
-  const [value, setValue] = useState<[]>([]);
+  const [value, setValue] = useState<string | undefined>(undefined); // Corrected type
   const [isFocus, setIsFocus] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [data, setData] = useState<[]>([]);
-  const [openCalendar, setOpenCalendar] = useState(false);
+  const [data, setData] = useState<CarOption[]>([]);
+  const [date, setDate] = useState(new Date());
+  const [open, setOpen] = useState(false);
 
-  const [datePicker, setDatePicker] = useState(new Date())
-  const [openDatePicker, setOpenDatePicker] = useState(false)
+  const formattedDate = date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const formattedTime = date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   const fetchUserData = useCallback(async () => {
     const storedUserId = await getUserId();
@@ -67,17 +79,6 @@ export default function RideScreen() {
       fetchUserData();
     }, [fetchUserData])
   );
-
-  const setDate = (event: any, date: any) => {
-    const {
-      type,
-      nativeEvent: { timestamp, utcOffset },
-    } = event;
-
-    console.log("data?", type, timestamp, utcOffset);
-    console.log("data 2?", date);
-  };
-
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -106,16 +107,13 @@ export default function RideScreen() {
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View>
-                  <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons
-                      name="chevron-back-outline"
-                      size={24}
-                      color="black"
-                    />
-                  </TouchableOpacity>
-                </View>
-
+                <TouchableOpacity onPress={() => navigation.goBack()}>
+                  <Ionicons
+                    name="chevron-back-outline"
+                    size={24}
+                    color="black"
+                  />
+                </TouchableOpacity>
                 <View style={{ marginLeft: 50 }}>
                   <Text
                     style={{
@@ -140,19 +138,9 @@ export default function RideScreen() {
                 </View>
               </View>
 
-              {/*começa aqui*/}
-
+              {/* Origem e destino */}
               <View>
-                <Text
-                  style={{
-                    fontFamily: "Jost",
-                    fontWeight: "700",
-                    fontSize: 15,
-                    marginBottom: 15,
-                  }}
-                >
-                  Origem e destino
-                </Text>
+                <Text style={styles.sectionTitle}>Origem e destino</Text>
                 <View style={{ marginBottom: 16 }}>
                   <SearchBar
                     placeholder={"Para onde?"}
@@ -167,18 +155,23 @@ export default function RideScreen() {
                 />
               </View>
 
+              {/* Data e hora */}
               <View style={{ marginTop: 24 }}>
-                <Text
-                  style={{
-                    fontFamily: "Jost",
-                    fontWeight: "700",
-                    fontSize: 15,
-                    marginBottom: 15,
-                  }}
+                <Text style={styles.sectionTitle}>Data e hora</Text>
+                <TouchableOpacity
+                  style={styles.dateTimeContainer}
+                  onPress={() => setOpen(true)}
                 >
-                  Data e hora
-                </Text>
-                <Button title="Open" onPress={() => setOpenDatePicker(true)} />
+                  <FontAwesome6
+                    name="clock"
+                    size={24}
+                    color="black"
+                    style={styles.icon}
+                  />
+                  <Text style={styles.dateTimeText}>
+                    {`${formattedDate}, ${formattedTime}`}
+                  </Text>
+                </TouchableOpacity>
                 <DatePicker
                   modal
                   locale="pt"
@@ -186,40 +179,19 @@ export default function RideScreen() {
                   confirmText="Confirmar"
                   cancelText="Cancelar"
                   title={"Data e hora"}
-                  open={openDatePicker}
-                  date={datePicker}
-                  onConfirm={(date) => {
-                    console.log('datee ----->', date);
-                    setOpenDatePicker(false);
-                    setDatePicker(date);
+                  open={open}
+                  date={date}
+                  onConfirm={(selectedDate) => {
+                    setDate(selectedDate);
+                    setOpen(false);
                   }}
-                  onCancel={() => {
-                    setOpenDatePicker(false);
-                  }}
+                  onCancel={() => setOpen(false)}
                 />
-                {/* <DateTimePicker
-                  value={new Date()}
-                  mode="time"
-                  onChange={setDate}
-                /> */}
-                {/* <SearchBar
-                  placeholder={"12 de Fevereiro de 2024, 15:00"}
-                  IconComponent={MaterialCommunityIcons}
-                  iconName="clock-time-three"
-                /> */}
               </View>
 
+              {/* Veículo */}
               <View style={{ marginTop: 24 }}>
-                <Text
-                  style={{
-                    fontFamily: "Jost",
-                    fontWeight: "700",
-                    fontSize: 15,
-                    marginBottom: 15,
-                  }}
-                >
-                  Veículo
-                </Text>
+                <Text style={styles.sectionTitle}>Veículo</Text>
                 <Dropdown
                   style={[styles.dropdown, isFocus && { borderColor: "blue" }]}
                   placeholderStyle={styles.placeholderStyle}
@@ -235,8 +207,7 @@ export default function RideScreen() {
                   onFocus={() => setIsFocus(true)}
                   onBlur={() => setIsFocus(false)}
                   onChange={(item) => {
-                    console.log("item?", item);
-                    setValue(item.value);
+                    setValue(item.value); // Corrected value type
                     setIsFocus(false);
                   }}
                   renderLeftIcon={() => (
@@ -251,26 +222,9 @@ export default function RideScreen() {
 
                 <View style={{ marginTop: 16 }}>
                   <Link href="/newCar/" asChild>
-                    <TouchableOpacity
-                      style={{
-                        backgroundColor: "#F5F5F5",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: 5,
-                        height: 40,
-                      }}
-                    >
+                    <TouchableOpacity style={styles.newCarButton}>
                       <AntDesign name="plus" size={18} color="black" />
-                      <Text
-                        style={{
-                          marginLeft: 16,
-                          fontFamily: "Jost",
-                          fontWeight: "700",
-                          fontSize: 15,
-                          color: "#000",
-                        }}
-                      >
+                      <Text style={styles.newCarText}>
                         Cadastrar novo veículo
                       </Text>
                     </TouchableOpacity>
@@ -278,100 +232,45 @@ export default function RideScreen() {
                 </View>
               </View>
 
+              {/* Opções */}
               <View style={{ marginTop: 24 }}>
-                <Text
-                  style={{
-                    fontFamily: "Jost",
-                    fontWeight: "700",
-                    fontSize: 15,
-                    marginBottom: 15,
-                  }}
-                >
-                  Opções
-                </Text>
+                <Text style={styles.sectionTitle}>Opções</Text>
                 <SearchBar
                   placeholder={"Quantidade de lugares disponíveis"}
                   IconComponent={FontAwesome6}
                   iconName="person-walking"
                 />
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
-                    marginTop: 16,
-                  }}
-                >
+                <View style={styles.optionRow}>
                   <Checkbox
                     style={styles.checkbox}
                     value={isAnalyzeChecked}
                     onValueChange={setAnalyzeChecked}
                     color={isAnalyzeChecked ? "#FF6E2F" : undefined}
                   />
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "500",
-                      fontFamily: "Jost",
-                      paddingHorizontal: 10,
-                    }}
-                  >
+                  <Text style={styles.optionText}>
                     Quero analisar o perfil do passageiro antes de confirmar a
                     carona
                   </Text>
                 </View>
 
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
-                  }}
-                >
+                <View style={styles.optionRow}>
                   <Checkbox
                     style={styles.checkbox}
                     value={isMeetingPointChecked}
                     onValueChange={setMeetingPointChecked}
                     color={isMeetingPointChecked ? "#FF6E2F" : undefined}
                   />
-                  <Text
-                    style={{
-                      fontSize: 15,
-                      fontWeight: "500",
-                      fontFamily: "Jost",
-                      paddingHorizontal: 10,
-                    }}
-                  >
+                  <Text style={styles.optionText}>
                     Aceito definir um ponto de encontro com o passageiro
                   </Text>
                 </View>
               </View>
 
-              {/*termina aqui*/}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#FF6E2F",
-                  width: 346,
-                  height: 40,
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: "white",
-                    fontFamily: "Jost",
-                    fontSize: 16,
-                    justifyContent: "center",
-                    fontWeight: "500",
-                  }}
-                >
-                  Pronto
-                </Text>
+              {/* Finalizar */}
+              <TouchableOpacity style={styles.finishButton}>
+                <Text style={styles.finishButtonText}>Pronto</Text>
               </TouchableOpacity>
             </View>
-
-            {/*terminar aqui*/}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -380,28 +279,35 @@ export default function RideScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {},
-  title: {},
-  separator: {},
-  checkbox: {
-    margin: 8,
+  sectionTitle: {
+    fontFamily: "Jost",
+    fontWeight: "700",
+    fontSize: 15,
+    marginBottom: 15,
+  },
+  dateTimeContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    width: 346,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 32,
+  },
+  dateTimeText: {
+    marginLeft: 10,
+    fontFamily: "Jost",
+    fontSize: 15,
+  },
+  icon: {
+    marginRight: 10,
   },
   dropdown: {
     height: 50,
     backgroundColor: "#F5F5F5",
     borderRadius: 32,
     paddingHorizontal: 12,
-  },
-  icon: {
-    marginRight: 5,
-  },
-  label: {
-    backgroundColor: "white",
-    left: 22,
-    top: 8,
-    zIndex: 999,
-    paddingHorizontal: 8,
-    fontSize: 14,
   },
   placeholderStyle: {
     fontFamily: "Jost",
@@ -419,5 +325,49 @@ const styles = StyleSheet.create({
   inputSearchStyle: {
     height: 40,
     fontSize: 16,
+  },
+  newCarButton: {
+    backgroundColor: "#F5F5F5",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 5,
+    height: 40,
+  },
+  newCarText: {
+    marginLeft: 16,
+    fontFamily: "Jost",
+    fontWeight: "700",
+    fontSize: 15,
+    color: "#000",
+  },
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginTop: 16,
+  },
+  checkbox: {
+    margin: 8,
+  },
+  optionText: {
+    fontSize: 15,
+    fontWeight: "500",
+    fontFamily: "Jost",
+    paddingHorizontal: 10,
+  },
+  finishButton: {
+    backgroundColor: "#FF6E2F",
+    width: 346,
+    height: 40,
+    justifyContent: "center",
+    marginTop: 24,
+  },
+  finishButtonText: {
+    textAlign: "center",
+    color: "white",
+    fontFamily: "Jost",
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
