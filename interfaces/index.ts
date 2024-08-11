@@ -1,14 +1,14 @@
 interface Race {
-    id: string
-    userId: string
-    createdAt: string
-    updatedAt: string
-    seats: number
-    carId: string
-    timeStart: string
-    passengerProfile: boolean
-    acceptPoint: boolean
-    driver: Driver
+    id?: string
+    userId?: string | null
+    createdAt?: string
+    updatedAt?: string
+    seats?: number
+    carId?: string
+    timeStart?: Date
+    passengerProfile?: boolean
+    acceptPoint?: boolean
+    driver?: Driver
 }
 
 interface Driver {

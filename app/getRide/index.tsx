@@ -1,8 +1,10 @@
 import CarImage from "@/assets/images/car.png";
 import SearchBar from "@/components/SearchBar";
 import { Text, View } from "@/components/Themed";
+import { getUserId } from "@/constants/Storage";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -13,10 +15,50 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
+import DatePicker from "react-native-date-picker";
 
 const keyboardOffset = Dimensions.get("screen").height / 8;
 export default function GetRideScreen() {
   const navigation = useNavigation();
+  const [date, setDate] = useState(new Date());
+  const [openDateTime, setOpenDateTime] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const formattedDate = date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const formattedTime = date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const fetchUserData = useCallback(async () => {
+    const storedUserId = await getUserId();
+    if (storedUserId) {
+      setUserId(storedUserId);
+    } else {
+      console.error("User ID not found in storage", storedUserId);
+    }
+  }, []);
+
+  const sendData = async () => {
+    const ride: Race = {
+      timeStart: date,
+      userId: userId,
+    };
+
+    console.log("getRide", ride);
+
+    // await sendRide(ride);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserData();
+    }, [fetchUserData])
+  );
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -102,21 +144,38 @@ export default function GetRideScreen() {
                 />
               </View>
 
+              {/* Data e hora */}
               <View style={{ marginTop: 24 }}>
-                <Text
-                  style={{
-                    fontFamily: "Jost",
-                    fontWeight: "700",
-                    fontSize: 15,
-                    marginBottom: 15,
-                  }}
+                <Text style={styles.sectionTitle}>Data e hora</Text>
+                <TouchableOpacity
+                  style={styles.dateTimeContainer}
+                  onPress={() => setOpenDateTime(true)}
                 >
-                  Data e hora
-                </Text>
-                <SearchBar
-                  placeholder={"12 de Fevereiro de 2024, 15:00"}
-                  IconComponent={MaterialCommunityIcons}
-                  iconName="clock-time-three"
+                  <MaterialCommunityIcons
+                    name="clock"
+                    size={24}
+                    color="black"
+                    style={styles.icon}
+                  />
+                  <Text style={styles.dateTimeText}>
+                    {`${formattedDate}, ${formattedTime}`}
+                  </Text>
+                </TouchableOpacity>
+                <DatePicker
+                  modal
+                  locale="pt"
+                  mode="datetime"
+                  confirmText="Confirmar"
+                  cancelText="Cancelar"
+                  title={"Data e hora"}
+                  open={openDateTime}
+                  date={date}
+                  onConfirm={(selectedDate) => {
+                    console.log("selectedDate", selectedDate);
+                    setDate(selectedDate);
+                    setOpenDateTime(false);
+                  }}
+                  onCancel={() => setOpenDateTime(false)}
                 />
               </View>
 
@@ -129,6 +188,7 @@ export default function GetRideScreen() {
                   justifyContent: "center",
                   marginTop: 24,
                 }}
+                onPress={sendData}
               >
                 <Text
                   style={{
@@ -159,5 +219,26 @@ const styles = StyleSheet.create({
   separator: {},
   checkbox: {
     margin: 8,
+  },
+  sectionTitle: {
+    fontFamily: "Jost",
+    fontWeight: "700",
+    fontSize: 15,
+    marginBottom: 15,
+  },
+  dateTimeContainer: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 32,
+  },
+  dateTimeText: {
+    marginLeft: 10,
+    fontFamily: "Jost",
+    fontSize: 15,
+  },
+  icon: {
+    marginRight: 10,
   },
 });

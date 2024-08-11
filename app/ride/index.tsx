@@ -40,9 +40,10 @@ export default function RideScreen() {
   const [value, setValue] = useState<string | undefined>(undefined); // Corrected type
   const [isFocus, setIsFocus] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const [data, setData] = useState<CarOption[]>([]);
+  const [carsData, setCarsData] = useState<CarOption[]>([]);
   const [date, setDate] = useState(new Date());
-  const [open, setOpen] = useState(false);
+  const [openDateTime, setOpenDateTime] = useState(false);
+  const [seats, setSeats] = useState(0);
 
   const formattedDate = date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -60,7 +61,7 @@ export default function RideScreen() {
       setUserId(storedUserId);
       const cars = await getUserCars(storedUserId);
       if (cars) {
-        setData(
+        setCarsData(
           cars.map((car) => ({
             label: `${toUpper(car.brand)}, ${toUpperFirst(car.model)}, ${
               car.year
@@ -73,6 +74,21 @@ export default function RideScreen() {
       console.error("User ID not found in storage", storedUserId);
     }
   }, []);
+
+  const sendData = async () => {
+    const ride: Race = {
+      timeStart: date,
+      userId: userId,
+      carId: value,
+      seats: seats,
+      passengerProfile: isAnalyzeChecked,
+		  acceptPoint: isMeetingPointChecked,
+    };
+
+    console.log("ride", ride);
+
+    // await sendRide(ride);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -160,9 +176,9 @@ export default function RideScreen() {
                 <Text style={styles.sectionTitle}>Data e hora</Text>
                 <TouchableOpacity
                   style={styles.dateTimeContainer}
-                  onPress={() => setOpen(true)}
+                  onPress={() => setOpenDateTime(true)}
                 >
-                  <FontAwesome6
+                  <MaterialCommunityIcons
                     name="clock"
                     size={24}
                     color="black"
@@ -179,13 +195,14 @@ export default function RideScreen() {
                   confirmText="Confirmar"
                   cancelText="Cancelar"
                   title={"Data e hora"}
-                  open={open}
+                  open={openDateTime}
                   date={date}
                   onConfirm={(selectedDate) => {
+                    console.log("selectedDate", selectedDate);
                     setDate(selectedDate);
-                    setOpen(false);
+                    setOpenDateTime(false);
                   }}
-                  onCancel={() => setOpen(false)}
+                  onCancel={() => setOpenDateTime(false)}
                 />
               </View>
 
@@ -198,7 +215,7 @@ export default function RideScreen() {
                   selectedTextStyle={styles.selectedTextStyle}
                   inputSearchStyle={styles.inputSearchStyle}
                   iconStyle={styles.iconStyle}
-                  data={data}
+                  data={carsData}
                   maxHeight={300}
                   labelField="label"
                   valueField="value"
@@ -207,6 +224,7 @@ export default function RideScreen() {
                   onFocus={() => setIsFocus(true)}
                   onBlur={() => setIsFocus(false)}
                   onChange={(item) => {
+                    console.log("item", item);
                     setValue(item.value); // Corrected value type
                     setIsFocus(false);
                   }}
@@ -239,6 +257,7 @@ export default function RideScreen() {
                   placeholder={"Quantidade de lugares disponíveis"}
                   IconComponent={FontAwesome6}
                   iconName="person-walking"
+                  onChangeText={setSeats}
                 />
                 <View style={styles.optionRow}>
                   <Checkbox
@@ -267,7 +286,7 @@ export default function RideScreen() {
               </View>
 
               {/* Finalizar */}
-              <TouchableOpacity style={styles.finishButton}>
+              <TouchableOpacity style={styles.finishButton} onPress={sendData}>
                 <Text style={styles.finishButtonText}>Pronto</Text>
               </TouchableOpacity>
             </View>
@@ -287,11 +306,8 @@ const styles = StyleSheet.create({
   },
   dateTimeContainer: {
     flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    width: 346,
     backgroundColor: "#F5F5F5",
     borderRadius: 32,
   },
