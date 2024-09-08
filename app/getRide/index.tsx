@@ -49,7 +49,7 @@ export default function GetRideScreen() {
       userId: userId,
     };
 
-    console.log("getRide", ride);
+    console.log("getRide", JSON.stringify(ride, null, 2));
 
     // await sendRide(ride);
   };

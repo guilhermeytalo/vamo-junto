@@ -27,6 +27,7 @@ import {
 import { Dropdown } from "react-native-element-dropdown";
 import { getUserCars } from "../api/car";
 import DatePicker from "react-native-date-picker";
+import { registerRace } from "../api/race";
 
 type CarOption = {
   label: string;
@@ -37,13 +38,13 @@ export default function RideScreen() {
   const navigation = useNavigation();
   const [isAnalyzeChecked, setAnalyzeChecked] = useState(false);
   const [isMeetingPointChecked, setMeetingPointChecked] = useState(false);
-  const [value, setValue] = useState<string | undefined>(undefined); // Corrected type
+  const [carValue, setCarValue] = useState<string | undefined>(undefined); // Corrected type
   const [isFocus, setIsFocus] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [carsData, setCarsData] = useState<CarOption[]>([]);
   const [date, setDate] = useState(new Date());
   const [openDateTime, setOpenDateTime] = useState(false);
-  const [seats, setSeats] = useState(0);
+  const [seats, setSeats] = useState<number>(0);
 
   const formattedDate = date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -79,15 +80,18 @@ export default function RideScreen() {
     const ride: Race = {
       timeStart: date,
       userId: userId,
-      carId: value,
-      seats: seats,
+      carId: carValue,
+      seats: Number(seats),
       passengerProfile: isAnalyzeChecked,
 		  acceptPoint: isMeetingPointChecked,
     };
 
-    console.log("ride", ride);
-
-    // await sendRide(ride);
+    console.log("ride", JSON.stringify(ride, null, 2));
+    try {
+      await registerRace(ride);
+    } catch (error) {
+      console.error("Failed to register ride", error);
+    }
   };
 
   useFocusEffect(
@@ -220,12 +224,12 @@ export default function RideScreen() {
                   labelField="label"
                   valueField="value"
                   placeholder={!isFocus ? "Selecione um veículo" : "..."}
-                  value={value}
+                  value={carValue}
                   onFocus={() => setIsFocus(true)}
                   onBlur={() => setIsFocus(false)}
                   onChange={(item) => {
                     console.log("item", item);
-                    setValue(item.value); // Corrected value type
+                    setCarValue(item.value); // Corrected value type
                     setIsFocus(false);
                   }}
                   renderLeftIcon={() => (
