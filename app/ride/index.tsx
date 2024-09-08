@@ -28,23 +28,38 @@ import { Dropdown } from "react-native-element-dropdown";
 import { getUserCars } from "../api/car";
 import DatePicker from "react-native-date-picker";
 import { registerRace } from "../api/race";
+import { z } from "zod";
 
 type CarOption = {
   label: string;
   value: string | undefined;
 };
 
+const rideSchema = z.object({
+  timeStart: z.date(),
+  userId: z.string(),
+  carId: z.string().min(1, "Veículo é obrigatório"),
+  seats: z.number().min(1, "Número de assentos é obrigatório"),
+  passengerProfile: z.boolean(),
+  acceptPoint: z.boolean(),
+});
+
+type FormData = z.infer<typeof rideSchema>;
+type FormErrors = Partial<Record<keyof FormData, string[]>>;
+
 export default function RideScreen() {
   const navigation = useNavigation();
   const [isAnalyzeChecked, setAnalyzeChecked] = useState(false);
   const [isMeetingPointChecked, setMeetingPointChecked] = useState(false);
-  const [carValue, setCarValue] = useState<string | undefined>(undefined); // Corrected type
+  const [carValue, setCarValue] = useState<string | undefined>(undefined);
   const [isFocus, setIsFocus] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [carsData, setCarsData] = useState<CarOption[]>([]);
   const [date, setDate] = useState(new Date());
   const [openDateTime, setOpenDateTime] = useState(false);
   const [seats, setSeats] = useState<number>(0);
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const formattedDate = date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -76,21 +91,67 @@ export default function RideScreen() {
     }
   }, []);
 
-  const sendData = async () => {
-    const ride: Race = {
-      timeStart: date,
-      userId: userId,
-      carId: carValue,
-      seats: Number(seats),
-      passengerProfile: isAnalyzeChecked,
-		  acceptPoint: isMeetingPointChecked,
-    };
+  const handleInputChange = (field: keyof FormData, value: any) => {
+    const updatedFormData = { [field]: value } as Partial<FormData>;
 
-    console.log("ride", JSON.stringify(ride, null, 2));
+    const result = rideSchema.safeParse({
+      ...getFormData(),
+      ...updatedFormData,
+    });
+    if (!result.success) {
+      setFormErrors({
+        ...formErrors,
+        [field]: result.error.formErrors.fieldErrors[field] as string[],
+      });
+    } else {
+      const updatedErrors = { ...formErrors };
+      delete updatedErrors[field];
+      setFormErrors(updatedErrors);
+    }
+
+    // Update state based on the field
+    switch (field) {
+      case "seats":
+        setSeats(value);
+        break;
+      case "carId":
+        setCarValue(value);
+        break;
+      case "passengerProfile":
+        setAnalyzeChecked(value);
+        break;
+      case "acceptPoint":
+        setMeetingPointChecked(value);
+        break;
+    }
+  };
+
+  const getFormData = (): FormData => ({
+    timeStart: date,
+    userId: userId || "",
+    carId: carValue || "",
+    seats: Number(seats),
+    passengerProfile: isAnalyzeChecked,
+    acceptPoint: isMeetingPointChecked,
+  });
+
+  const sendData = async () => {
+    const formData = getFormData();
+    const result = rideSchema.safeParse(formData);
+
+    if (!result.success) {
+      setFormErrors(result.error.formErrors.fieldErrors as FormErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
-      await registerRace(ride);
+      await registerRace(formData);
+      navigation.goBack();
     } catch (error) {
       console.error("Failed to register ride", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -99,6 +160,12 @@ export default function RideScreen() {
       fetchUserData();
     }, [fetchUserData])
   );
+
+  const isButtonDisabled =
+    isSubmitting ||
+    Object.values(formErrors).some(Boolean) ||
+    !carValue ||
+    seats === 0;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -166,12 +233,16 @@ export default function RideScreen() {
                     placeholder={"Para onde?"}
                     IconComponent={Feather}
                     iconName="search"
+                    value=""
+                    onChangeText={() => {}}
                   />
                 </View>
                 <SearchBar
                   placeholder={"De onde?"}
                   IconComponent={Feather}
                   iconName="search"
+                  value=""
+                  onChangeText={() => {}}
                 />
               </View>
 
@@ -202,7 +273,6 @@ export default function RideScreen() {
                   open={openDateTime}
                   date={date}
                   onConfirm={(selectedDate) => {
-                    console.log("selectedDate", selectedDate);
                     setDate(selectedDate);
                     setOpenDateTime(false);
                   }}
@@ -228,8 +298,7 @@ export default function RideScreen() {
                   onFocus={() => setIsFocus(true)}
                   onBlur={() => setIsFocus(false)}
                   onChange={(item) => {
-                    console.log("item", item);
-                    setCarValue(item.value); // Corrected value type
+                    handleInputChange("carId", item.value);
                     setIsFocus(false);
                   }}
                   renderLeftIcon={() => (
@@ -241,6 +310,9 @@ export default function RideScreen() {
                     />
                   )}
                 />
+                {formErrors.carId && (
+                  <Text style={styles.errorText}>{formErrors.carId[0]}</Text>
+                )}
 
                 <View style={{ marginTop: 16 }}>
                   <Link href="/newCar/" asChild>
@@ -261,13 +333,20 @@ export default function RideScreen() {
                   placeholder={"Quantidade de lugares disponíveis"}
                   IconComponent={FontAwesome6}
                   iconName="person-walking"
-                  onChangeText={setSeats}
+                  onChangeText={(text) =>
+                    handleInputChange("seats", Number(text))
+                  }
                 />
+                {formErrors.seats && (
+                  <Text style={styles.errorText}>{formErrors.seats[0]}</Text>
+                )}
                 <View style={styles.optionRow}>
                   <Checkbox
                     style={styles.checkbox}
                     value={isAnalyzeChecked}
-                    onValueChange={setAnalyzeChecked}
+                    onValueChange={(value) =>
+                      handleInputChange("passengerProfile", value)
+                    }
                     color={isAnalyzeChecked ? "#FF6E2F" : undefined}
                   />
                   <Text style={styles.optionText}>
@@ -280,7 +359,9 @@ export default function RideScreen() {
                   <Checkbox
                     style={styles.checkbox}
                     value={isMeetingPointChecked}
-                    onValueChange={setMeetingPointChecked}
+                    onValueChange={(value) =>
+                      handleInputChange("acceptPoint", value)
+                    }
                     color={isMeetingPointChecked ? "#FF6E2F" : undefined}
                   />
                   <Text style={styles.optionText}>
@@ -290,7 +371,14 @@ export default function RideScreen() {
               </View>
 
               {/* Finalizar */}
-              <TouchableOpacity style={styles.finishButton} onPress={sendData}>
+              <TouchableOpacity
+                style={[
+                  styles.finishButton,
+                  { backgroundColor: isButtonDisabled ? "#ccc" : "#FF6E2F" },
+                ]}
+                onPress={sendData}
+                disabled={isButtonDisabled}
+              >
                 <Text style={styles.finishButtonText}>Pronto</Text>
               </TouchableOpacity>
             </View>
@@ -389,5 +477,12 @@ const styles = StyleSheet.create({
     fontFamily: "Jost",
     fontSize: 16,
     fontWeight: "500",
+  },
+  errorText: {
+    color: "#FF3B30",
+    fontFamily: "Jost",
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 10,
   },
 });
