@@ -1,28 +1,22 @@
-import CarImage from "@/assets/images/car.png";
-import SearchBar from "@/components/SearchBar";
-import { Text, View } from "@/components/Themed";
-import { getUserId } from "@/constants/Storage";
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "expo-router";
-import { useCallback, useState } from "react";
-import {
-  Dimensions,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-} from "react-native";
+import React, { useCallback, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, StyleSheet, Image } from 'react-native';
+import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import DatePicker from "react-native-date-picker";
+import { useFocusEffect, useNavigation } from "expo-router";
+import CarImage from "@/assets/images/car.png";
+import Map from '@/assets/images/map.png';
+import { getUserId } from "@/constants/Storage";
+import SearchBar from "@/components/SearchBar";
+import DATA from "@/constants/Data.json";
+import LastRide from '@/components/LastRide';
 
-const keyboardOffset = Dimensions.get("screen").height / 8;
+// Main GetRideScreen component
 export default function GetRideScreen() {
   const navigation = useNavigation();
+  const lastRideData = DATA;
+  const [userId, setUserId] = useState(null);
   const [date, setDate] = useState(new Date());
   const [openDateTime, setOpenDateTime] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
   const formattedDate = date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -43,169 +37,130 @@ export default function GetRideScreen() {
     }
   }, []);
 
-  const sendData = async () => {
-    const ride: Race = {
-      timeStart: date,
-      userId: userId,
-    };
-
-    console.log("getRide", JSON.stringify(ride, null, 2));
-
-    // await sendRide(ride);
-  };
-
   useFocusEffect(
     useCallback(() => {
       fetchUserData();
     }, [fetchUserData])
   );
 
+  const sendData = async () => {
+    const ride = {
+      timeStart: date,
+      userId: userId,
+    };
+    console.log("getRide", JSON.stringify(ride, null, 2));
+    // await sendRide(ride);
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={styles.keyboardAvoidingView}
       >
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <View	
-            style={{
-              flex: 1,
-              alignItems: "center",
-			  
-            }}
-          >
-            <View
-              style={{
-                paddingHorizontal: 41,
-                flexDirection: "column",
-                justifyContent: "center",
-				paddingVertical: 41, 
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <View>
-                  <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons
-                      name="chevron-back-outline"
-                      size={24}
-                      color="black"
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={{ marginLeft: 50 }}>
-                  <Text
-                    style={{
-                      fontFamily: "Jost",
-                      fontSize: 20,
-                      fontWeight: "700",
-                      color: "black",
-                      textAlign: "center",
-                    }}
-                  >
+        <ScrollView contentContainerStyle={styles.scrollViewContent}>
+          <View style={styles.container}>
+            <View style={styles.header}>
+              <View style={{alignItems: 'center', flexDirection: 'row',}}>
+                <TouchableOpacity
+                  onPress={() => navigation.goBack()}
+                  style={styles.backButton}
+                >
+                  <Ionicons
+                    name="chevron-back-outline"
+                    size={24}
+                    color="black"
+                  />
+                </TouchableOpacity>
+                <View style={styles.titleContainer}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <Image width={50} height={50} source={CarImage} />
-                    Pegar Carona
-                  </Text>
+                    <Text style={styles.title}>Pegar Carona</Text>
+                  </View>
                   <View
                     style={{
-                      height: 4,
-                      width: "100%",
-                      marginBottom: 15,
+                      height: 3,
+                      width: "55%",
                       backgroundColor: "#FF6E2F",
                     }}
                   />
                 </View>
               </View>
-
-              {/*começa aqui*/}
-
-              <View>
-                <Text
-                  style={{
-                    fontFamily: "Jost",
-                    fontWeight: "700",
-                    fontSize: 15,
-                    marginBottom: 15,
-                  }}
-                >
-                  Origem e destino
+              {/* <View style={styles.titleContainer}>
+                <Text style={styles.title}>
+                  <Image source={CarImage} style={styles.carImage} />
+                  Pegar Carona
                 </Text>
-                <View style={{ marginBottom: 16 }}>
+                <View style={styles.titleUnderline} />
+              </View> */}
+            </View>
+
+            {userId ? (
+              <View style={styles.resultsContainer}>
+                <Text style={styles.resultsTitle}>Resultados</Text>
+                <View style={styles.lastRideContainer}>
+                  <LastRide lastRide={lastRideData} />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.formContainer}>
+                <View style={styles.searchSection}>
+                  <Text style={styles.sectionTitle}>Origem e destino</Text>
+                  <View style={styles.searchBarContainer}>
+                    <SearchBar
+                      placeholder={"Para onde?"}
+                      IconComponent={Feather}
+                      iconName="search"
+                    />
+                  </View>
                   <SearchBar
-                    placeholder={"Para onde?"}
+                    placeholder={"De onde?"}
                     IconComponent={Feather}
                     iconName="search"
                   />
                 </View>
-                <SearchBar
-                  placeholder={"De onde?"}
-                  IconComponent={Feather}
-                  iconName="search"
-                />
-              </View>
 
-              {/* Data e hora */}
-              <View style={{ marginTop: 24 }}>
-                <Text style={styles.sectionTitle}>Data e hora</Text>
-                <TouchableOpacity
-                  style={styles.dateTimeContainer}
-                  onPress={() => setOpenDateTime(true)}
-                >
-                  <MaterialCommunityIcons
-                    name="clock"
-                    size={24}
-                    color="black"
-                    style={styles.icon}
+                <View style={styles.dateTimeSection}>
+                  <Text style={styles.sectionTitle}>Data e hora</Text>
+                  <TouchableOpacity
+                    style={styles.dateTimeContainer}
+                    onPress={() => setOpenDateTime(true)}
+                  >
+                    <MaterialCommunityIcons
+                      name="clock"
+                      size={24}
+                      color="black"
+                      style={styles.icon}
+                    />
+                    <Text style={styles.dateTimeText}>
+                      {`${formattedDate}, ${formattedTime}`}
+                    </Text>
+                  </TouchableOpacity>
+                  <DatePicker
+                    modal
+                    locale="pt"
+                    mode="datetime"
+                    confirmText="Confirmar"
+                    cancelText="Cancelar"
+                    title={"Data e hora"}
+                    open={openDateTime}
+                    date={date}
+                    onConfirm={(selectedDate) => {
+                      setDate(selectedDate);
+                      setOpenDateTime(false);
+                    }}
+                    onCancel={() => setOpenDateTime(false)}
                   />
-                  <Text style={styles.dateTimeText}>
-                    {`${formattedDate}, ${formattedTime}`}
-                  </Text>
-                </TouchableOpacity>
-                <DatePicker
-                  modal
-                  locale="pt"
-                  mode="datetime"
-                  confirmText="Confirmar"
-                  cancelText="Cancelar"
-                  title={"Data e hora"}
-                  open={openDateTime}
-                  date={date}
-                  onConfirm={(selectedDate) => {
-                    console.log("selectedDate", selectedDate);
-                    setDate(selectedDate);
-                    setOpenDateTime(false);
-                  }}
-                  onCancel={() => setOpenDateTime(false)}
-                />
-              </View>
+                </View>
 
-              {/*termina aqui*/}
-              <TouchableOpacity
-                style={{
-                  backgroundColor: "#FF6E2F",
-                  width: 346,
-                  height: 40,
-                  justifyContent: "center",
-                  marginTop: 24,
-                }}
-                onPress={sendData}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    color: "white",
-                    fontFamily: "Jost",
-                    fontSize: 16,
-                    justifyContent: "center",
-                    fontWeight: "500",
-                  }}
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={sendData}
                 >
-                  Pronto
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/*terminar aqui*/}
+                  <Text style={styles.submitButtonText}>Pronto</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -214,31 +169,110 @@ export default function GetRideScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {},
-  title: {},
-  separator: {},
-  checkbox: {
-    margin: 8,
+  safeArea: {
+    flex: 1,
+  },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+  },
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 41,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+    width: '100%',
+  },
+  backButton: {
+    padding: 10,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontFamily: 'Jost',
+    fontSize: 20,
+    fontWeight: '700',
+    color: 'black',
+    textAlign: 'center',
+  },
+  titleUnderline: {
+    height: 4,
+    width: '70%',
+    marginTop: 8,
+    backgroundColor: '#FF6E2F',
+  },
+  carImage: {
+    width: 50,
+    height: 50,
+  },
+  resultsContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  resultsTitle: {
+    alignSelf: 'flex-start',
+    fontFamily: 'Jost',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  lastRideContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  formContainer: {
+    width: '100%',
+  },
+  searchSection: {
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontFamily: "Jost",
-    fontWeight: "700",
+    fontFamily: 'Jost',
+    fontWeight: '700',
     fontSize: 15,
     marginBottom: 15,
   },
+  searchBarContainer: {
+    marginBottom: 16,
+  },
+  dateTimeSection: {
+    marginBottom: 24,
+  },
   dateTimeContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: '#F5F5F5',
     borderRadius: 32,
-  },
-  dateTimeText: {
-    marginLeft: 10,
-    fontFamily: "Jost",
-    fontSize: 15,
   },
   icon: {
     marginRight: 10,
+  },
+  dateTimeText: {
+    fontFamily: 'Jost',
+    fontSize: 15,
+  },
+  submitButton: {
+    backgroundColor: '#FF6E2F',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitButtonText: {
+    color: 'white',
+    fontFamily: 'Jost',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });

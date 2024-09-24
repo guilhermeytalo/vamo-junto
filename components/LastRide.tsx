@@ -16,65 +16,70 @@ type LastRideProps = {
 export default function LastRide({lastRide}: LastRideProps) {
     return (
         <>
-            {lastRide.slice(0, 2).map(({id, driver, street1, street2}, index) => (
-                <View key={id} style={styles.container}>
-                    <View style={styles.map}>
-                        <Image source={Map}/>
-                    </View>
-                    <View style={styles.content}>
-                        <View style={styles.header}>
-                            <Text style={styles.title}>{street1}</Text>
-                            <Ionicons name="arrow-forward" size={24} color="black"/>
-                            <Text style={styles.title}>{street2}</Text>
-                        </View>
-                        <Text style={styles.subText}>{driver ? `Motorista ${driver}` : 'Você foi o motorista'}</Text>
-                        {index === 0 && <View style={styles.separator}/>}
-                    </View>
-                </View>
-            ))}
-        </>
+        {lastRide.slice(0, 2).map(({ id, driver, street1, street2 }, index) => (
+          <View key={id} style={styles.rideContainer}>
+            <View style={styles.rideMap}>
+              <Image source={Map} style={styles.mapImage} />
+            </View>
+            <View style={styles.rideContent}>
+              <View style={styles.rideHeader}>
+                <Text style={styles.rideStreet}>{street1}</Text>
+                <Ionicons name="arrow-forward" size={24} color="black" style={styles.rideArrow} />
+                <Text style={styles.rideStreet}>{street2}</Text>
+              </View>
+              <Text style={styles.rideDriver}>{driver ? `Motorista ${driver}` : 'Você foi o motorista'}</Text>
+              {index === 0 && <View style={styles.rideSeparator} />}
+            </View>
+          </View>
+        ))}
+      </>
     )
 }
 
 const styles = StyleSheet.create({
-    container: {
-        justifyContent: 'center',
-        alignItems: 'center',
+    rideContainer: {
         flexDirection: 'row',
-        marginTop: 23,
-
-    },
-    map: {
+        alignItems: 'center',
+        marginBottom: 16,
+        width: '100%',
+      },
+      rideMap: {
         width: 37,
         height: 37,
         backgroundColor: 'rgba(255, 110, 47, 0.1)',
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 50,
-    },
-    content: {
-        flexDirection: 'column',
-        marginLeft: 12,
-        width: '100%'
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
-    title: {
-        fontWeight: "700",
-        fontSize: 16,
-        fontFamily: 'Inter'
-    },
-    subText: {
+        marginRight: 12,
+      },
+      mapImage: {
+        width: '70%',
+        height: '70%',
+      },
+      rideContent: {
+        flex: 1,
+      },
+      rideHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+      },
+      rideStreet: {
         fontFamily: 'Inter',
-        fontWeight: "500",
+        fontWeight: '700',
+        fontSize: 16,
+      },
+      rideArrow: {
+        marginHorizontal: 8,
+      },
+      rideDriver: {
+        fontFamily: 'Inter',
+        fontWeight: '500',
         fontSize: 10,
-    },
-    separator: {
+      },
+      rideSeparator: {
         height: 1,
-        width: 280,
-        marginTop: 18,
-        backgroundColor: '#F5F5F5'
-    },
+        backgroundColor: '#F5F5F5',
+        marginTop: 16,
+      },
 })
