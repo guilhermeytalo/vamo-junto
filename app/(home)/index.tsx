@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   separator: {
     marginBottom: 38,
     height: 3,
-    width: "40%",
+    width: "55%",
     backgroundColor: "#FF6E2F",
   },
   suggestionsContainer: {

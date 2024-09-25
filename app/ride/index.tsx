@@ -171,7 +171,7 @@ export default function RideScreen() {
     <SafeAreaView style={{ flex: 1 }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+        style={{ flex: 1, backgroundColor: "white" }}
         keyboardVerticalOffset={Dimensions.get("screen").height / 2}
       >
         <ScrollView

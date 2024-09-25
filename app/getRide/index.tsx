@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, StyleSheet, Image, ActivityIndicator } from 'react-native';
 import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import DatePicker from "react-native-date-picker";
 import { useFocusEffect, useNavigation } from "expo-router";
@@ -16,6 +16,7 @@ export default function GetRideScreen() {
   const [userId, setUserId] = useState(null);
   const [date, setDate] = useState(new Date());
   const [openDateTime, setOpenDateTime] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const formattedDate = date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -28,12 +29,14 @@ export default function GetRideScreen() {
   });
 
   const fetchUserData = useCallback(async () => {
+    setIsLoading(true);
     const storedUserId = await getUserId();
     if (storedUserId) {
       setUserId(storedUserId);
     } else {
       console.error("User ID not found in storage", storedUserId);
     }
+    setIsLoading(false);
   }, []);
 
   useFocusEffect(
@@ -49,6 +52,87 @@ export default function GetRideScreen() {
     };
     console.log("getRide", JSON.stringify(ride, null, 2));
     // await sendRide(ride);
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6E2F" />
+        </View>
+      );
+    }
+
+    if (userId) {
+      return (
+        <View style={styles.resultsContainer}>
+          <Text style={styles.resultsTitle}>Resultados</Text>
+          <View style={styles.lastRideContainer}>
+            <LastRide lastRide={lastRideData} />
+          </View>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.formContainer}>
+        <View style={styles.searchSection}>
+          <Text style={styles.sectionTitle}>Origem e destino</Text>
+          <View style={styles.searchBarContainer}>
+            <SearchBar
+              placeholder={"Para onde?"}
+              IconComponent={Feather}
+              iconName="search"
+            />
+          </View>
+          <SearchBar
+            placeholder={"De onde?"}
+            IconComponent={Feather}
+            iconName="search"
+          />
+        </View>
+
+        <View style={styles.dateTimeSection}>
+          <Text style={styles.sectionTitle}>Data e hora</Text>
+          <TouchableOpacity
+            style={styles.dateTimeContainer}
+            onPress={() => setOpenDateTime(true)}
+          >
+            <MaterialCommunityIcons
+              name="clock"
+              size={24}
+              color="black"
+              style={styles.icon}
+            />
+            <Text style={styles.dateTimeText}>
+              {`${formattedDate}, ${formattedTime}`}
+            </Text>
+          </TouchableOpacity>
+          <DatePicker
+            modal
+            locale="pt"
+            mode="datetime"
+            confirmText="Confirmar"
+            cancelText="Cancelar"
+            title={"Data e hora"}
+            open={openDateTime}
+            date={date}
+            onConfirm={(selectedDate) => {
+              setDate(selectedDate);
+              setOpenDateTime(false);
+            }}
+            onCancel={() => setOpenDateTime(false)}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.submitButton}
+          onPress={sendData}
+        >
+          <Text style={styles.submitButtonText}>Pronto</Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
@@ -83,72 +167,7 @@ export default function GetRideScreen() {
               </View>
             </View>
 
-            {userId ? (
-              <View style={styles.resultsContainer}>
-                <Text style={styles.resultsTitle}>Resultados</Text>
-                <View style={styles.lastRideContainer}>
-                  <LastRide lastRide={lastRideData} />
-                </View>
-              </View>
-            ) : (
-              <View style={styles.formContainer}>
-                <View style={styles.searchSection}>
-                  <Text style={styles.sectionTitle}>Origem e destino</Text>
-                  <View style={styles.searchBarContainer}>
-                    <SearchBar
-                      placeholder={"Para onde?"}
-                      IconComponent={Feather}
-                      iconName="search"
-                    />
-                  </View>
-                  <SearchBar
-                    placeholder={"De onde?"}
-                    IconComponent={Feather}
-                    iconName="search"
-                  />
-                </View>
-
-                <View style={styles.dateTimeSection}>
-                  <Text style={styles.sectionTitle}>Data e hora</Text>
-                  <TouchableOpacity
-                    style={styles.dateTimeContainer}
-                    onPress={() => setOpenDateTime(true)}
-                  >
-                    <MaterialCommunityIcons
-                      name="clock"
-                      size={24}
-                      color="black"
-                      style={styles.icon}
-                    />
-                    <Text style={styles.dateTimeText}>
-                      {`${formattedDate}, ${formattedTime}`}
-                    </Text>
-                  </TouchableOpacity>
-                  <DatePicker
-                    modal
-                    locale="pt"
-                    mode="datetime"
-                    confirmText="Confirmar"
-                    cancelText="Cancelar"
-                    title={"Data e hora"}
-                    open={openDateTime}
-                    date={date}
-                    onConfirm={(selectedDate) => {
-                      setDate(selectedDate);
-                      setOpenDateTime(false);
-                    }}
-                    onCancel={() => setOpenDateTime(false)}
-                  />
-                </View>
-
-                <TouchableOpacity
-                  style={styles.submitButton}
-                  onPress={sendData}
-                >
-                  <Text style={styles.submitButtonText}>Pronto</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            {renderContent()}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -263,5 +282,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Jost',
     fontSize: 16,
     fontWeight: '500',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
