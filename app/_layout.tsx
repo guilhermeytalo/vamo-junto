@@ -22,8 +22,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Jost: require('../assets/fonts/Jost-Regular.ttf'),
-    Inter: require('../assets/fonts/Inter-Regular.ttf'),
+    Jost: require('@/assets/fonts/Jost-Regular.ttf'),
+    Inter: require('@/assets/fonts/Inter-Regular.ttf'),
     ...FontAwesome.font,
   });
 

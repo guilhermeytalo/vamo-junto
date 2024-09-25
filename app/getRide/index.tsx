@@ -10,7 +10,6 @@ import SearchBar from "@/components/SearchBar";
 import DATA from "@/constants/Data.json";
 import LastRide from '@/components/LastRide';
 
-// Main GetRideScreen component
 export default function GetRideScreen() {
   const navigation = useNavigation();
   const lastRideData = DATA;
@@ -78,21 +77,10 @@ export default function GetRideScreen() {
                     <Text style={styles.title}>Pegar Carona</Text>
                   </View>
                   <View
-                    style={{
-                      height: 3,
-                      width: "55%",
-                      backgroundColor: "#FF6E2F",
-                    }}
+                    style={styles.titleUnderline}
                   />
                 </View>
               </View>
-              {/* <View style={styles.titleContainer}>
-                <Text style={styles.title}>
-                  <Image source={CarImage} style={styles.carImage} />
-                  Pegar Carona
-                </Text>
-                <View style={styles.titleUnderline} />
-              </View> */}
             </View>
 
             {userId ? (
@@ -171,6 +159,7 @@ export default function GetRideScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: 'white',
   },
   keyboardAvoidingView: {
     flex: 1,
@@ -191,12 +180,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   backButton: {
-    padding: 10,
+    width: 20,
   },
   titleContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 20,
   },
   title: {
     fontFamily: 'Jost',
@@ -206,10 +196,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   titleUnderline: {
-    height: 4,
-    width: '70%',
-    marginTop: 8,
-    backgroundColor: '#FF6E2F',
+    height: 3,
+    width: "55%",
+    backgroundColor: "#FF6E2F",
   },
   carImage: {
     width: 50,
@@ -222,8 +211,8 @@ const styles = StyleSheet.create({
   resultsTitle: {
     alignSelf: 'flex-start',
     fontFamily: 'Jost',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: 'bold',
     marginBottom: 16,
   },
   lastRideContainer: {

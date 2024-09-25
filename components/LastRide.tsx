@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
       rideMap: {
         width: 37,
         height: 37,
-        backgroundColor: 'rgba(255, 110, 47, 0.1)',
+        backgroundColor: '#F5F5F5',
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 50,
