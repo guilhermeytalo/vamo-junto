@@ -1,4 +1,4 @@
-import { BASE_URL_IP } from "..";
+import { BASE_URL,BASE_URL_IP } from "..";
 
 export const getUser = async (userId: string) => {
     if (!userId) {

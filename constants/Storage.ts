@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // in future this will be changed when the user will be logged in
-const USER_ID_KEY = "4f4e62c4-f839-4b2d-ab62-2195a3ec4565";
+const USER_ID_KEY = "3a22c5f8-3479-4fef-a7ab-6f65d7ff6027";
 // const USER_ID_KEY = "";
 
 const storeUserId = async (value: string) => {

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useReducer, useState } from "react";
 import CarImage from "@/assets/images/car.png";
 import SearchBar from "@/components/SearchBar";
 import { Text, View } from "@/components/Themed";
@@ -36,6 +36,8 @@ type CarOption = {
 };
 
 const rideSchema = z.object({
+  startAddress: z.string(),
+  endAddress: z.string(),
   timeStart: z.date(),
   userId: z.string(),
   carId: z.string().min(1, "Veículo é obrigatório"),
@@ -47,34 +49,82 @@ const rideSchema = z.object({
 type FormData = z.infer<typeof rideSchema>;
 type FormErrors = Partial<Record<keyof FormData, string[]>>;
 
+const initialState = {
+  formData: {
+    startAddress: "",
+    endAddress: "",
+    timeStart: new Date(),
+    userId: "",
+    carId: "",
+    seats: 0,
+    passengerProfile: false,
+    acceptPoint: false,
+  },
+  formErrors: {} as FormErrors,
+  isSubmitting: false,
+};
+
+type Action =
+  | { type: "UPDATE_FIELD"; field: keyof FormData; value: any }
+  | { type: "SET_ERRORS"; errors: FormErrors }
+  | { type: "SET_SUBMITTING"; isSubmitting: boolean }
+  | { type: "SET_USER_ID"; userId: string };
+
+function formReducer(
+  state: typeof initialState,
+  action: Action
+): typeof initialState {
+  switch (action.type) {
+    case "UPDATE_FIELD":
+      return {
+        ...state,
+        formData: { ...state.formData, [action.field]: action.value },
+      };
+    case "SET_ERRORS":
+      return { ...state, formErrors: action.errors };
+    case "SET_SUBMITTING":
+      return { ...state, isSubmitting: action.isSubmitting };
+    case "SET_USER_ID":
+      return {
+        ...state,
+        formData: { ...state.formData, userId: action.userId },
+      };
+    default:
+      return state;
+  }
+}
+
 export default function RideScreen() {
   const navigation = useNavigation();
-  const [isAnalyzeChecked, setAnalyzeChecked] = useState(false);
-  const [isMeetingPointChecked, setMeetingPointChecked] = useState(false);
-  const [carValue, setCarValue] = useState<string | undefined>(undefined);
-  const [isFocus, setIsFocus] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(formReducer, initialState);
   const [carsData, setCarsData] = useState<CarOption[]>([]);
-  const [date, setDate] = useState(new Date());
+  const [isFocus, setIsFocus] = useState(false);
   const [openDateTime, setOpenDateTime] = useState(false);
-  const [seats, setSeats] = useState<number>(0);
-  const [formErrors, setFormErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const formattedDate = date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  const formattedTime = date.toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const handleInputChange = (field: keyof FormData, value: any) => {
+    dispatch({ type: "UPDATE_FIELD", field, value });
+
+    const result = rideSchema.safeParse({
+      ...state.formData,
+      [field]: value,
+    });
+
+    if (!result.success) {
+      dispatch({
+        type: "SET_ERRORS",
+        errors: result.error.formErrors.fieldErrors as FormErrors,
+      });
+    } else {
+      const updatedErrors = { ...state.formErrors };
+      delete updatedErrors[field];
+      dispatch({ type: "SET_ERRORS", errors: updatedErrors });
+    }
+  };
 
   const fetchUserData = useCallback(async () => {
     const storedUserId = await getUserId();
     if (storedUserId) {
-      setUserId(storedUserId);
+      dispatch({ type: "SET_USER_ID", userId: storedUserId });
       const cars = await getUserCars(storedUserId);
       if (cars) {
         setCarsData(
@@ -91,67 +141,26 @@ export default function RideScreen() {
     }
   }, []);
 
-  const handleInputChange = (field: keyof FormData, value: any) => {
-    const updatedFormData = { [field]: value } as Partial<FormData>;
-
-    const result = rideSchema.safeParse({
-      ...getFormData(),
-      ...updatedFormData,
-    });
-    if (!result.success) {
-      setFormErrors({
-        ...formErrors,
-        [field]: result.error.formErrors.fieldErrors[field] as string[],
-      });
-    } else {
-      const updatedErrors = { ...formErrors };
-      delete updatedErrors[field];
-      setFormErrors(updatedErrors);
-    }
-
-    // Update state based on the field
-    switch (field) {
-      case "seats":
-        setSeats(value);
-        break;
-      case "carId":
-        setCarValue(value);
-        break;
-      case "passengerProfile":
-        setAnalyzeChecked(value);
-        break;
-      case "acceptPoint":
-        setMeetingPointChecked(value);
-        break;
-    }
-  };
-
-  const getFormData = (): FormData => ({
-    timeStart: date,
-    userId: userId || "",
-    carId: carValue || "",
-    seats: Number(seats),
-    passengerProfile: isAnalyzeChecked,
-    acceptPoint: isMeetingPointChecked,
-  });
-
   const sendData = async () => {
-    const formData = getFormData();
-    const result = rideSchema.safeParse(formData);
-
+    const result = rideSchema.safeParse(state.formData);
     if (!result.success) {
-      setFormErrors(result.error.formErrors.fieldErrors as FormErrors);
+      dispatch({
+        type: "SET_ERRORS",
+        errors: result.error.formErrors.fieldErrors as FormErrors,
+      });
       return;
     }
 
-    setIsSubmitting(true);
+    const { data } = result;
+
+    dispatch({ type: "SET_SUBMITTING", isSubmitting: true });
     try {
-      await registerRace(formData);
+      await registerRace(data);
       navigation.goBack();
     } catch (error) {
       console.error("Failed to register ride", error);
     } finally {
-      setIsSubmitting(false);
+      dispatch({ type: "SET_SUBMITTING", isSubmitting: false });
     }
   };
 
@@ -161,11 +170,21 @@ export default function RideScreen() {
     }, [fetchUserData])
   );
 
+  const formattedDate = state.formData.timeStart.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const formattedTime = state.formData.timeStart.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   const isButtonDisabled =
-    isSubmitting ||
-    Object.values(formErrors).some(Boolean) ||
-    !carValue ||
-    seats === 0;
+    state.isSubmitting ||
+    Object.values(state.formErrors).some(Boolean) ||
+    !state.formData.carId ||
+    state.formData.seats === 0;
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -233,16 +252,16 @@ export default function RideScreen() {
                     placeholder={"Para onde?"}
                     IconComponent={Feather}
                     iconName="search"
-                    value=""
-                    onChangeText={() => {}}
+                    onChangeText={(text) =>
+                      handleInputChange("startAddress", text)
+                    }
                   />
                 </View>
                 <SearchBar
                   placeholder={"De onde?"}
                   IconComponent={Feather}
                   iconName="search"
-                  value=""
-                  onChangeText={() => {}}
+                  onChangeText={(text) => handleInputChange("endAddress", text)}
                 />
               </View>
 
@@ -271,9 +290,9 @@ export default function RideScreen() {
                   cancelText="Cancelar"
                   title={"Data e hora"}
                   open={openDateTime}
-                  date={date}
+                  date={state.formData.timeStart}
                   onConfirm={(selectedDate) => {
-                    setDate(selectedDate);
+                    handleInputChange("timeStart", selectedDate);
                     setOpenDateTime(false);
                   }}
                   onCancel={() => setOpenDateTime(false)}
@@ -294,7 +313,7 @@ export default function RideScreen() {
                   labelField="label"
                   valueField="value"
                   placeholder={!isFocus ? "Selecione um veículo" : "..."}
-                  value={carValue}
+                  value={state.formData.carId}
                   onFocus={() => setIsFocus(true)}
                   onBlur={() => setIsFocus(false)}
                   onChange={(item) => {
@@ -310,8 +329,10 @@ export default function RideScreen() {
                     />
                   )}
                 />
-                {formErrors.carId && (
-                  <Text style={styles.errorText}>{formErrors.carId[0]}</Text>
+                {state.formErrors.carId && (
+                  <Text style={styles.errorText}>
+                    {state.formErrors.carId[0]}
+                  </Text>
                 )}
 
                 <View style={{ marginTop: 16 }}>
@@ -337,17 +358,21 @@ export default function RideScreen() {
                     handleInputChange("seats", Number(text))
                   }
                 />
-                {formErrors.seats && (
-                  <Text style={styles.errorText}>{formErrors.seats[0]}</Text>
+                {state.formErrors.seats && (
+                  <Text style={styles.errorText}>
+                    {state.formErrors.seats[0]}
+                  </Text>
                 )}
                 <View style={styles.optionRow}>
                   <Checkbox
                     style={styles.checkbox}
-                    value={isAnalyzeChecked}
+                    value={state.formData.passengerProfile}
                     onValueChange={(value) =>
                       handleInputChange("passengerProfile", value)
                     }
-                    color={isAnalyzeChecked ? "#FF6E2F" : undefined}
+                    color={
+                      state.formData.passengerProfile ? "#FF6E2F" : undefined
+                    }
                   />
                   <Text style={styles.optionText}>
                     Quero analisar o perfil do passageiro antes de confirmar a
@@ -358,11 +383,11 @@ export default function RideScreen() {
                 <View style={styles.optionRow}>
                   <Checkbox
                     style={styles.checkbox}
-                    value={isMeetingPointChecked}
+                    value={state.formData.acceptPoint}
                     onValueChange={(value) =>
                       handleInputChange("acceptPoint", value)
                     }
-                    color={isMeetingPointChecked ? "#FF6E2F" : undefined}
+                    color={state.formData.acceptPoint ? "#FF6E2F" : undefined}
                   />
                   <Text style={styles.optionText}>
                     Aceito definir um ponto de encontro com o passageiro

@@ -18,7 +18,7 @@ export default function HomeScreen() {
   useEffect(() => {
     // console.log("lastRide", lastRide);
     // call the user api
-    getUser("4f4e62c4-f839-4b2d-ab62-2195a3ec4565");
+    getUser("3a22c5f8-3479-4fef-a7ab-6f65d7ff6027");
 
   }, []);
 

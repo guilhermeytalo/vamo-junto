@@ -135,7 +135,7 @@ export default function NewCarScreen() {
       type: formData.type.toLowerCase(),
       color: formData.color.toLowerCase(),
       year: formData.year.toLowerCase(),
-      userId: "4f4e62c4-f839-4b2d-ab62-2195a3ec4565",
+      userId: "3a22c5f8-3479-4fef-a7ab-6f65d7ff6027",
     };
 
     try {
