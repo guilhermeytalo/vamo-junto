@@ -177,8 +177,11 @@ export default function GetRideScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    flex: 1,
-    backgroundColor: 'white',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
   },
   keyboardAvoidingView: {
     flex: 1,
