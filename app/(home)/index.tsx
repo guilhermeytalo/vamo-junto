@@ -19,8 +19,8 @@ export default function HomeScreen() {
       const racesData = await getAllRaces();
       console.log("racesData", JSON.stringify(racesData, null, 2));
       const transformedRaces = racesData
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        .map((race, index) => ({
+        .sort((a: any, b:any) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((race: Race, index) => ({
           id: race.id,
           street1: race.startAddress,
           street2: race.endAddress,

@@ -9,6 +9,8 @@ interface Race {
     passengerProfile?: boolean
     acceptPoint?: boolean
     driver?: Driver
+    raceCar?: Car
+    passengers?: User[]
 }
 
 interface Driver {
@@ -16,6 +18,7 @@ interface Driver {
     name: string
     email: string
     password: string
+    phone?: string
     createdAt?: string
     updatedAt?: string
   }

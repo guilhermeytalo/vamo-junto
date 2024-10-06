@@ -1,24 +1,25 @@
+import { getAllRaces } from "@/app/api/race";
+import CarImage from "@/assets/images/car.png";
+import LastRide from "@/components/LastRide";
+import SearchBar from "@/components/SearchBar";
+import SegmentedControl from "@/components/SegmentedControl";
+import { getUserId } from "@/constants/Storage";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect, useNavigation } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
+  ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
-  Image,
-  ActivityIndicator,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
-import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import DatePicker from "react-native-date-picker";
-import { useFocusEffect, useNavigation } from "expo-router";
-import CarImage from "@/assets/images/car.png";
-import { getUserId } from "@/constants/Storage";
-import SearchBar from "@/components/SearchBar";
-import LastRide from "@/components/LastRide";
-import { getAllRaces } from "@/app/api/race";
 
 export default function GetRideScreen() {
   const navigation = useNavigation();
@@ -27,6 +28,7 @@ export default function GetRideScreen() {
   const [openDateTime, setOpenDateTime] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [races, setRaces] = useState([]);
+  const [selectedTab, setSelectedTab] = useState(0);
 
   const formattedDate = date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -52,8 +54,7 @@ export default function GetRideScreen() {
   const fetchRaces = useCallback(async () => {
     try {
       const racesData = await getAllRaces();
-      console.log("racesData", JSON.stringify(racesData, null, 2));
-      const transformedRaces = racesData.map((race, index) => ({
+      const transformedRaces = racesData.map((race) => ({
         id: race.id,
         street1: race.startAddress,
         street2: race.endAddress,
@@ -82,81 +83,69 @@ export default function GetRideScreen() {
     // await sendRide(ride);
   };
 
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#FF6E2F" />
-        </View>
-      );
-    }
-
-    if (races.length > 0) {
-      return (
-        <View style={styles.resultsContainer}>
-          <Text style={styles.resultsTitle}>Resultados</Text>
-          <LastRide lastRide={races} />
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.formContainer}>
-        <View style={styles.searchSection}>
-          <Text style={styles.sectionTitle}>Origem e destino</Text>
-          <View style={styles.searchBarContainer}>
-            <SearchBar
-              placeholder={"Para onde?"}
-              IconComponent={Feather}
-              iconName="search"
-            />
-          </View>
+  const SearchForm = () => (
+    <View style={styles.formContainer}>
+      <View style={styles.searchSection}>
+        <Text style={styles.sectionTitle}>Origem e destino</Text>
+        <View style={styles.searchBarContainer}>
           <SearchBar
-            placeholder={"De onde?"}
+            placeholder={"Para onde?"}
             IconComponent={Feather}
             iconName="search"
           />
         </View>
-
-        <View style={styles.dateTimeSection}>
-          <Text style={styles.sectionTitle}>Data e hora</Text>
-          <TouchableOpacity
-            style={styles.dateTimeContainer}
-            onPress={() => setOpenDateTime(true)}
-          >
-            <MaterialCommunityIcons
-              name="clock"
-              size={24}
-              color="black"
-              style={styles.icon}
-            />
-            <Text style={styles.dateTimeText}>
-              {`${formattedDate}, ${formattedTime}`}
-            </Text>
-          </TouchableOpacity>
-          <DatePicker
-            modal
-            locale="pt"
-            mode="datetime"
-            confirmText="Confirmar"
-            cancelText="Cancelar"
-            title={"Data e hora"}
-            open={openDateTime}
-            date={date}
-            onConfirm={(selectedDate) => {
-              setDate(selectedDate);
-              setOpenDateTime(false);
-            }}
-            onCancel={() => setOpenDateTime(false)}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.submitButton} onPress={sendData}>
-          <Text style={styles.submitButtonText}>Pronto</Text>
-        </TouchableOpacity>
+        <SearchBar
+          placeholder={"De onde?"}
+          IconComponent={Feather}
+          iconName="search"
+        />
       </View>
-    );
-  };
+
+      <View style={styles.dateTimeSection}>
+        <Text style={styles.sectionTitle}>Data e hora</Text>
+        <TouchableOpacity
+          style={styles.dateTimeContainer}
+          onPress={() => setOpenDateTime(true)}
+        >
+          <MaterialCommunityIcons
+            name="clock"
+            size={24}
+            color="black"
+            style={styles.icon}
+          />
+          <Text style={styles.dateTimeText}>
+            {`${formattedDate}, ${formattedTime}`}
+          </Text>
+        </TouchableOpacity>
+        <DatePicker
+          modal
+          locale="pt"
+          mode="datetime"
+          confirmText="Confirmar"
+          cancelText="Cancelar"
+          title={"Data e hora"}
+          open={openDateTime}
+          date={date}
+          onConfirm={(selectedDate) => {
+            setDate(selectedDate);
+            setOpenDateTime(false);
+          }}
+          onCancel={() => setOpenDateTime(false)}
+        />
+      </View>
+
+      <TouchableOpacity style={styles.submitButton} onPress={sendData}>
+        <Text style={styles.submitButtonText}>Pronto</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const ResultsView = () => (
+    <View style={styles.resultsContainer}>
+      <Text style={styles.resultsTitle}>Resultados</Text>
+      <LastRide lastRide={races} />
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -172,11 +161,7 @@ export default function GetRideScreen() {
                   onPress={() => navigation.goBack()}
                   style={styles.backButton}
                 >
-                  <Ionicons
-                    name="chevron-back-outline"
-                    size={24}
-                    color="black"
-                  />
+                  <Ionicons name="chevron-back-outline" size={24} color="black" />
                 </TouchableOpacity>
                 <View style={styles.titleContainer}>
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -187,8 +172,20 @@ export default function GetRideScreen() {
                 </View>
               </View>
             </View>
+            
+            <SegmentedControl 
+              values={["Buscar", "Histórico"]} 
+              selectedIndex={selectedTab}
+              onChange={setSelectedTab}
+            />
 
-            {renderContent()}
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#FF6E2F" />
+              </View>
+            ) : (
+              selectedTab === 0 ? <SearchForm /> : <ResultsView />
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
