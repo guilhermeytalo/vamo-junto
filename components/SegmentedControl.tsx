@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 4,
     },
     segmentedControlButtonSelected: {
-        backgroundColor: "#333",
+        backgroundColor: "#FF6E2F",
     },
     segmentedControlButtonText: {
         color: "#333",

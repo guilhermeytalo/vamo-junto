@@ -386,7 +386,7 @@ export default function RideScreen() {
                   </Text>
                 </View>
 
-                <View style={styles.optionRow}>
+                {/* <View style={styles.optionRow}>
                   <Checkbox
                     style={styles.checkbox}
                     value={state.formData.acceptPoint}
@@ -398,7 +398,7 @@ export default function RideScreen() {
                   <Text style={styles.optionText}>
                     Aceito definir um ponto de encontro com o passageiro
                   </Text>
-                </View>
+                </View> */}
               </View>
 
               {/* Finalizar */}
