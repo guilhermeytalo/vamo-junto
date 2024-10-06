@@ -1,22 +1,32 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, StyleSheet, Image, ActivityIndicator } from 'react-native';
-import { Ionicons, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useCallback, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import DatePicker from "react-native-date-picker";
 import { useFocusEffect, useNavigation } from "expo-router";
 import CarImage from "@/assets/images/car.png";
-import Map from '@/assets/images/map.png';
 import { getUserId } from "@/constants/Storage";
 import SearchBar from "@/components/SearchBar";
-import DATA from "@/constants/Data.json";
-import LastRide from '@/components/LastRide';
+import LastRide from "@/components/LastRide";
+import { getAllRaces } from "@/app/api/race";
 
 export default function GetRideScreen() {
   const navigation = useNavigation();
-  const lastRideData = DATA;
   const [userId, setUserId] = useState(null);
   const [date, setDate] = useState(new Date());
   const [openDateTime, setOpenDateTime] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [races, setRaces] = useState([]);
 
   const formattedDate = date.toLocaleDateString("pt-BR", {
     day: "2-digit",
@@ -39,10 +49,28 @@ export default function GetRideScreen() {
     setIsLoading(false);
   }, []);
 
+  const fetchRaces = useCallback(async () => {
+    try {
+      const racesData = await getAllRaces();
+      console.log("racesData", JSON.stringify(racesData, null, 2));
+      const transformedRaces = racesData.map((race, index) => ({
+        id: race.id,
+        street1: race.startAddress,
+        street2: race.endAddress,
+        driver: race.driver.name,
+        userId: race.userId,
+      }));
+      setRaces(transformedRaces);
+    } catch (error) {
+      console.error("Failed to fetch races", error);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       fetchUserData();
-    }, [fetchUserData])
+      fetchRaces();
+    }, [fetchUserData, fetchRaces])
   );
 
   const sendData = async () => {
@@ -63,13 +91,11 @@ export default function GetRideScreen() {
       );
     }
 
-    if (userId) {
+    if (races.length > 0) {
       return (
         <View style={styles.resultsContainer}>
           <Text style={styles.resultsTitle}>Resultados</Text>
-          <View style={styles.lastRideContainer}>
-            <LastRide lastRide={lastRideData} />
-          </View>
+          <LastRide lastRide={races} />
         </View>
       );
     }
@@ -125,10 +151,7 @@ export default function GetRideScreen() {
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={sendData}
-        >
+        <TouchableOpacity style={styles.submitButton} onPress={sendData}>
           <Text style={styles.submitButtonText}>Pronto</Text>
         </TouchableOpacity>
       </View>
@@ -144,7 +167,7 @@ export default function GetRideScreen() {
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
           <View style={styles.container}>
             <View style={styles.header}>
-              <View style={{alignItems: 'center', flexDirection: 'row',}}>
+              <View style={{ alignItems: "center", flexDirection: "row" }}>
                 <TouchableOpacity
                   onPress={() => navigation.goBack()}
                   style={styles.backButton}
@@ -160,9 +183,7 @@ export default function GetRideScreen() {
                     <Image width={50} height={50} source={CarImage} />
                     <Text style={styles.title}>Pegar Carona</Text>
                   </View>
-                  <View
-                    style={styles.titleUnderline}
-                  />
+                  <View style={styles.titleUnderline} />
                 </View>
               </View>
             </View>
@@ -177,7 +198,7 @@ export default function GetRideScreen() {
 
 const styles = StyleSheet.create({
   safeArea: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     bottom: 0,
@@ -191,65 +212,46 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 41,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 24,
-    width: '100%',
+    width: "100%",
   },
   backButton: {
     width: 20,
   },
   titleContainer: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 20,
   },
   title: {
-    fontFamily: 'Jost',
+    fontFamily: "Jost",
     fontSize: 20,
-    fontWeight: '700',
-    color: 'black',
-    textAlign: 'center',
+    fontWeight: "700",
+    color: "black",
+    textAlign: "center",
   },
   titleUnderline: {
     height: 3,
     width: "55%",
     backgroundColor: "#FF6E2F",
   },
-  carImage: {
-    width: 50,
-    height: 50,
-  },
-  resultsContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  resultsTitle: {
-    alignSelf: 'flex-start',
-    fontFamily: 'Jost',
-    fontSize: 15,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  lastRideContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
   formContainer: {
-    width: '100%',
+    width: "100%",
   },
   searchSection: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontFamily: 'Jost',
-    fontWeight: '700',
+    fontFamily: "Jost",
+    fontWeight: "700",
     fontSize: 15,
     marginBottom: 15,
   },
@@ -260,35 +262,46 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   dateTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: "#F5F5F5",
     borderRadius: 32,
   },
   icon: {
     marginRight: 10,
   },
   dateTimeText: {
-    fontFamily: 'Jost',
+    fontFamily: "Jost",
     fontSize: 15,
   },
   submitButton: {
-    backgroundColor: '#FF6E2F',
+    backgroundColor: "#FF6E2F",
     paddingVertical: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   submitButtonText: {
-    color: 'white',
-    fontFamily: 'Jost',
+    color: "white",
+    fontFamily: "Jost",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  resultsContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  resultsTitle: {
+    alignSelf: "flex-start",
+    fontFamily: "Jost",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
   },
 });

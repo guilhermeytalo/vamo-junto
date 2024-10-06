@@ -187,15 +187,21 @@ export default function RideScreen() {
     state.formData.seats === 0;
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        bottom: 0,
+        right: 0,
+      }}
+    >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1, backgroundColor: "white" }}
-        keyboardVerticalOffset={Dimensions.get("screen").height / 2}
       >
         <ScrollView
-          contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 41 }}
-          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ flexGrow: 1 }}
         >
           <View
             style={{

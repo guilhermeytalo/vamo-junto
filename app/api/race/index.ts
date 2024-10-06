@@ -14,3 +14,15 @@ export const registerRace = async (race: Race) => {
             console.error("Failed to register a race2", error);
         });
 };
+
+
+export const getAllRaces = async () => {
+    return axios.get(`${BASE_URL_IP}/race`)
+        .then((response) => {
+            console.log("Server response:", response);
+            return response.data;
+        })
+        .catch((error) => {
+            console.error("Failed to retrieve races", error);
+        });
+}
