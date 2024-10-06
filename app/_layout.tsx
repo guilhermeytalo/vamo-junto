@@ -51,6 +51,8 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{headerShown: false}}>
+        {/* <Stack.Screen name="signin" /> */}
+        {/* <Stack.Screen name="signup" /> */}
         <Stack.Screen name="(home)" />
         <Stack.Screen name="ride" />
         <Stack.Screen name="getRide" />
