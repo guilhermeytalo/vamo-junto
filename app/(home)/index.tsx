@@ -1,25 +1,47 @@
-import { Image, StyleSheet } from "react-native";
-import { Text, View } from "@/components/Themed";
 import CarImage from "@/assets/images/car.png";
-import SearchBar from "@/components/SearchBar";
-import LastRide from "@/components/LastRide";
-import DATA from "@/constants/Data.json";
-import ButtonComponent from "@/components/Button";
 import BANNERBACKGROUND from "@/assets/images/planningBG.png";
-import Badge from "@react-navigation/bottom-tabs/src/views/Badge";
-import { Link } from "expo-router";
+import ButtonComponent from "@/components/Button";
+import LastRide from "@/components/LastRide";
+import SearchBar from "@/components/SearchBar";
+import { Text, View } from "@/components/Themed";
 import { Feather } from "@expo/vector-icons";
-import { useEffect } from "react";
+import Badge from "@react-navigation/bottom-tabs/src/views/Badge";
+import { Link, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { Image, StyleSheet } from "react-native";
+import { getAllRaces } from "../api/race";
 import { getUser } from "../api/user";
 
 export default function HomeScreen() {
-  const lastRide = DATA;
+  const [races, setRaces] = useState([]);
+  const fetchRaces = useCallback(async () => {
+    try {
+      const racesData = await getAllRaces();
+      console.log("racesData", JSON.stringify(racesData, null, 2));
+      const transformedRaces = racesData
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .map((race, index) => ({
+          id: race.id,
+          street1: race.startAddress,
+          street2: race.endAddress,
+          driver: race.driver.name,
+          userId: race.userId,
+        }))
+        .slice(0, 2);
+      setRaces(transformedRaces);
+    } catch (error) {
+      console.error("Failed to fetch races", error);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRaces();
+    }, [fetchRaces])
+  );
 
   useEffect(() => {
-    // console.log("lastRide", lastRide);
-    // call the user api
     getUser("3a22c5f8-3479-4fef-a7ab-6f65d7ff6027");
-
   }, []);
 
   return (
@@ -36,7 +58,7 @@ export default function HomeScreen() {
         iconName="search"
       />
       <View style={{ alignSelf: "flex-start" }}>
-        <LastRide lastRide={lastRide} />
+        <LastRide lastRide={races} />
       </View>
 
       <View style={styles.suggestionsContainer}>
